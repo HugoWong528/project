@@ -2,1159 +2,604 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SyncCast - Cinematic Studio</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Data Platform</title>
     <style>
-        :root {
-            /* Morandi Cinematic Palette */
-            --bg-base: #18191B;       
-            --surface: #242426;       
-            --surface-light: #2F3033; 
-            --primary: #B89B72;       
-            --primary-hover: #CDB38B;
-            --text-main: #E6E2D6;     
-            --text-muted: #858480;    
-            --border: #38383A;        
-            --accent-red: #A85751;    
-            
-            --font-title: 'Oswald', sans-serif;
-            --font-mono: 'Space Mono', monospace;
-            --font-sans: 'Inter', sans-serif;
-            
-            --shadow-depth: 0 24px 50px rgba(0, 0, 0, 0.7);
-            --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+
         body {
-            background-color: var(--bg-base); 
-            background-image: radial-gradient(circle at 50% 0%, #202225 0%, var(--bg-base) 80%);
-            color: var(--text-main); 
-            font-family: var(--font-sans);
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
-            padding: 24px 16px; 
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-        }
-        
-        body::before { 
-            content: "35MM // CINE-SYNC FORMAT ▻ KODAK VISION3"; 
-            position: fixed; 
-            top: 50%; 
-            left: 24px; 
-            transform: translateY(-50%) rotate(-90deg);
-            transform-origin: left center;
-            font-size: 10px; 
-            font-family: var(--font-mono);
-            letter-spacing: 6px; 
-            color: rgba(133, 132, 128, 0.3); 
-            white-space: nowrap;
-            pointer-events: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
         .container {
-            background: var(--surface); 
-            width: 100%; 
-            max-width: 460px;
-            text-align: center; 
-            position: relative; 
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            padding: 56px 64px;
-            box-shadow: var(--shadow-depth), var(--inner-glow);
-            border-radius: 6px;
-            border: 1px solid rgba(0,0,0,0.8);
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
         }
 
-        .container::before, .container::after {
-            content: "";
-            position: absolute;
-            top: 0; 
-            bottom: 0; 
-            width: 32px;
-            background-color: var(--surface);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='40'%3E%3Crect x='8' y='12' width='16' height='16' rx='3' fill='%2318191B' stroke='%23000000' stroke-width='1.5' stroke-opacity='0.6'/%3E%3Crect x='8' y='12' width='16' height='16' rx='3' fill='none' stroke='%23ffffff' stroke-width='1' stroke-opacity='0.03'/%3E%3C/svg%3E");
-            background-repeat: repeat-y;
-            background-position: center top;
-            z-index: 0;
-            border-top: 1px solid rgba(255,255,255,0.03);
-            border-bottom: 1px solid rgba(255,255,255,0.03);
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
         }
-        .container::before { 
-            left: 0; 
-            border-radius: 6px 0 0 6px; 
-            border-right: 1px solid rgba(0,0,0,0.6);
-            box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+
+        h1 {
+            color: #333;
+            font-size: 28px;
         }
-        .container::after { 
-            right: 0; 
-            border-radius: 0 6px 6px 0; 
-            border-left: 1px solid rgba(0,0,0,0.6);
-            box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+
+        .lang-switch {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
         }
-        
-        .container > * { position: relative; z-index: 1; }
-        
-        .hidden { display: none !important; opacity: 0; pointer-events: none; transform: translateY(10px); }
-        
-        h1 { 
-            font-family: var(--font-title); 
-            font-size: 36px; 
-            font-weight: 500; 
-            margin-bottom: 6px; 
-            letter-spacing: 6px; 
-            text-transform: uppercase; 
-            color: var(--text-main);
+
+        .lang-switch:hover {
+            background: #764ba2;
         }
-        
-        p.subtitle { 
-            color: var(--primary); 
-            font-size: 10px; 
-            font-family: var(--font-mono);
-            letter-spacing: 4px; 
-            text-transform: uppercase; 
-            margin-bottom: 48px; 
-            opacity: 0.9;
+
+        .form-group {
+            margin-bottom: 20px;
         }
-        
-        button {
-            width: 100%; 
-            padding: 18px; 
-            margin-bottom: 16px; 
-            font-size: 12px; 
-            font-weight: 500; 
-            letter-spacing: 3px; 
-            text-transform: uppercase; 
-            border: 1px solid var(--border); 
-            background: var(--surface-light); 
-            color: var(--text-main); 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            border-radius: 4px;
-            font-family: var(--font-sans);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-        }
-        
-        button:hover { 
-            background: #3A3B3E; 
-            border-color: #4A4B4E; 
-            transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-        }
-        
-        button.primary { 
-            background: var(--primary); 
-            color: #121212; 
-            border: 1px solid transparent; 
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
             font-weight: 600;
-        }
-        
-        button.primary:hover { 
-            background: var(--primary-hover); 
-            box-shadow: 0 8px 20px rgba(184, 155, 114, 0.15);
-        }
-        
-        button:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
-        
-        /* 雙向語音 - 控制按鈕樣式 */
-        .control-row { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
-        .control-row button { margin-bottom: 0; }
-        
-        .mic-btn {
-            width: 56px;
-            height: 54px;
-            flex-shrink: 0;
-            border-radius: 4px;
-            background: rgba(36, 36, 38, 0.8);
-            border: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: var(--accent-red); /* 預設靜音紅 / 鎖定紅 */
-            padding: 0;
-        }
-        
-        .mic-btn.active {
-            color: var(--primary); /* 開啟時黃銅色 / 解鎖黃銅色 */
-            border-color: var(--primary);
-            background: rgba(184, 155, 114, 0.1);
-            box-shadow: inset 0 0 15px rgba(184, 155, 114, 0.15);
-        }
-        .mic-btn svg { width: 22px; height: 22px; transition: all 0.3s ease; }
-        .mic-btn:hover:not(.locked) { background: #3A3B3E; }
-        
-        /* 觀眾端麥克風被鎖定時的樣式 */
-        .mic-btn.locked {
-            opacity: 0.4;
-            cursor: not-allowed;
-            background: #1a1a1c;
-            border-color: rgba(255,255,255,0.02);
-            color: var(--accent-red);
+            font-size: 14px;
         }
 
-        input {
-            width: 100%; 
-            padding: 24px 0; 
-            margin-bottom: 36px; 
-            background: #121213; 
-            border: 1px solid #000; 
-            color: var(--primary); 
-            font-size: 46px; 
-            font-family: var(--font-mono); 
-            font-weight: 400;
-            text-align: center; 
-            outline: none; 
-            transition: all 0.3s; 
-            text-transform: uppercase;
-            border-radius: 6px;
-            box-shadow: inset 0 4px 15px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05);
-            letter-spacing: 8px;
-        }
-        input::placeholder { color: #2A2B2D; font-size: 28px; letter-spacing: 8px; }
-        input:focus { border-color: var(--primary); box-shadow: inset 0 4px 15px rgba(0,0,0,0.8), 0 0 0 1px var(--primary); }
-        
-        .info-label { 
-            font-size: 10px; 
-            letter-spacing: 3px; 
-            color: var(--text-muted); 
-            text-transform: uppercase; 
-            margin-bottom: 12px;
-            font-family: var(--font-mono);
-        }
-        
-        .code-display { 
-            font-family: var(--font-mono); 
-            font-size: 64px; 
-            font-weight: 400; 
-            letter-spacing: 16px; 
-            color: var(--primary); 
-            background: #101011;
-            margin-bottom: 36px; 
-            padding: 20px 8px 20px 24px;
-            border-radius: 6px;
-            border: 1px solid #000;
-            box-shadow: inset 0 8px 24px rgba(0,0,0,0.9), 0 1px 0 rgba(255,255,255,0.06);
-            position: relative;
-        }
-        
-        .preview-wrapper { 
-            width: 100%; 
-            aspect-ratio: 16/9; 
-            background: #0C0D0E; 
-            border: 1px solid #000; 
-            margin-bottom: 28px; 
-            position: relative; 
-            overflow: hidden; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            border-radius: 4px;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.05);
-        }
-        
-        .preview-wrapper::after {
-            content: "";
-            position: absolute;
-            inset: 12px;
-            border: 1px solid rgba(230, 226, 214, 0.15);
-            pointer-events: none;
-            background: 
-                linear-gradient(to right, rgba(230, 226, 214, 0.2) 1px, transparent 1px) 50% 50% / 20px 1px no-repeat,
-                linear-gradient(to bottom, rgba(230, 226, 214, 0.2) 1px, transparent 1px) 50% 50% / 1px 20px no-repeat;
-        }
-        
-        .preview-wrapper::before {
-            content: "STBY";
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            color: var(--accent-red);
-            font-family: var(--font-mono);
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            z-index: 2;
-        }
-        video[srcObject]:not([srcObject="null"]) ~ .preview-placeholder { display: none; }
-        
-        video { width: 100%; height: 100%; object-fit: contain; image-rendering: crisp-edges; position: relative; z-index: 1; }
-        .preview-placeholder { position: absolute; font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); letter-spacing: 4px; z-index: 0; }
-        
-        #qrcode { display: flex; justify-content: center; margin: 36px auto 0; width: 100%; max-width: 130px; opacity: 0.9; cursor: pointer; transition: transform 0.3s, opacity 0.3s; }
-        #qrcode:hover { transform: scale(1.05); opacity: 1; }
-        #qrcode img, #qrcode canvas { width: 100% !important; height: auto !important; border: 6px solid var(--text-main); border-radius: 4px; }
-        
-        .status-text { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 28px; letter-spacing: 2px; text-transform: uppercase; }
-        .status-dot { width: 6px; height: 6px; background: var(--accent-red); border-radius: 50%; animation: pulse 2s ease-in-out infinite; }
-        
-        @keyframes pulse { 0% { opacity: 0.8; box-shadow: 0 0 0px var(--accent-red); } 50% { opacity: 0.2; box-shadow: none; } 100% { opacity: 0.8; box-shadow: 0 0 0px var(--accent-red); } }
-        
-        /* 觀眾播放器 */
-        #viewer-player { position: fixed; inset: 0; background: #080809; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .loading-box { text-align: center; color: var(--text-main); font-family: var(--font-mono); text-transform: uppercase; }
-        .loading-text { font-size: 11px; letter-spacing: 4px; margin-bottom: 16px; padding: 0 20px; color: var(--primary);}
-        
-        #manual-play-btn { position: absolute; z-index: 1000; padding: 18px 36px; background: rgba(184, 155, 114, 0.05); border: 1px solid var(--primary); color: var(--primary); backdrop-filter: blur(8px); display: none; cursor: pointer; font-size: 11px; font-family: var(--font-mono); letter-spacing: 3px; border-radius: 4px; text-transform: uppercase; transition: all 0.3s; }
-        #manual-play-btn:hover { background: rgba(184, 155, 114, 0.15); box-shadow: 0 0 20px rgba(184, 155, 114, 0.1); }
-        
-        #btn-fullscreen, #btn-exit { 
-            position: absolute; z-index: 1001; 
-            background: rgba(36, 36, 38, 0.4); border: 1px solid rgba(255,255,255,0.05); 
-            backdrop-filter: blur(12px); padding: 12px 24px; font-size: 10px; 
-            font-family: var(--font-mono); letter-spacing: 2px; text-transform: uppercase;
-            cursor: pointer; border-radius: 4px; display: none; width: auto; margin: 0; transition: background 0.3s, border-color 0.3s;
-        }
-        #btn-fullscreen { top: 24px; right: 24px; color: var(--text-main); }
-        #btn-fullscreen:hover { background: rgba(58, 59, 62, 0.6); border-color: rgba(255,255,255,0.1); }
-
-        #btn-exit { top: 24px; left: 24px; color: var(--accent-red); }
-        #btn-exit:hover { background: rgba(168, 87, 81, 0.15); border-color: var(--accent-red); }
-
-        /* 觀眾懸浮控制列 (麥克風) */
-        #viewer-controls {
-            position: absolute;
-            bottom: 36px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1002;
-            display: flex;
-            gap: 16px;
-            background: rgba(24, 25, 27, 0.6);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 8px;
+        input[type="text"],
+        input[type="email"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transition: opacity 0.5s ease, transform 0.5s ease;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
         }
 
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
 
-/* 新增閒置時的隱藏樣式 */
-#viewer-controls.idle-hide {
-    opacity: 0;
-    pointer-events: none;
-    transform: translate(-50%, 15px); /* 稍微往下沉的淡出效果 */
-}
-        
-        #viewer-controls .mic-btn { border-radius: 6px; width: 64px; height: 48px; }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
 
-        #debug-panel { position: fixed; bottom: 0; left: 0; width: 100%; height: 35vh; background: rgba(24, 25, 27, 0.98); color: var(--text-main); font-family: var(--font-mono); font-size: 11px; z-index: 99999; display: none; flex-direction: column; padding: 24px; box-sizing: border-box; border-top: 1px solid var(--border); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-        #debug-content { flex-grow: 1; overflow-y: auto; word-break: break-all; line-height: 1.8; padding-right: 12px; }
-        #debug-content::-webkit-scrollbar { width: 4px; }
-        #debug-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-        #btn-debug { position: fixed; bottom: 24px; right: 24px; z-index: 99998; background: var(--surface); color: var(--text-muted); border: 1px solid var(--border); padding: 10px 16px; border-radius: 4px; font-size: 10px; font-family: var(--font-mono); letter-spacing: 2px; cursor: pointer; width: auto; margin: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: all 0.3s; }
-        #btn-debug:hover { color: var(--text-main); background: var(--surface-light); }
-
-        #qr-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(24, 25, 27, 0.95);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            z-index: 100000;
+        .button-group {
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
+            gap: 10px;
+            margin-top: 25px;
         }
-        #qr-overlay-content { padding: 24px; background: var(--text-main); border-radius: 8px; box-shadow: 0 24px 60px rgba(0,0,0,0.8); }
-        #qr-overlay-content img, #qr-overlay-content canvas { width: 60vmin !important; height: 60vmin !important; max-width: 500px; max-height: 500px; display: block; }
-        .qr-close-text { margin-top: 36px; color: var(--text-muted); font-family: var(--font-mono); font-size: 12px; letter-spacing: 4px; text-transform: uppercase; animation: pulse 2s infinite; }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .data-list {
+            margin-top: 40px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 30px;
+        }
+
+        .data-list h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .list-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: 15px;
+        }
+
+        .item-content {
+            flex: 1;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item-text {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .item-time {
+            color: #999;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #45a049;
+        }
+
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #da190b;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .export-import {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .export-import button {
+            flex: 1;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .list-item {
+                flex-direction: column;
+            }
+
+            .item-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="view-home" class="container">
-        <h1>SyncCast</h1>
-        <p class="subtitle">Cinematic Screen Studio</p>
-        <button id="btn-start-presenter" class="primary" onclick="initRole('presenter')">Start Presenting</button>
-        <button id="btn-start-viewer" onclick="initRole('viewer')">Join Session</button>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1 id="title">Local Data Platform</h1>
+            <button class="lang-switch" onclick="toggleLanguage()">中文</button>
+        </div>
 
-    <div id="view-presenter" class="container hidden">
-        <h1>Studio</h1>
-        <p class="subtitle">Broadcast Dashboard</p>
-        <div class="info-label">Room Access Code</div>
-        <div id="room-id" class="code-display">...</div>
-        <div class="preview-wrapper">
-            <span class="preview-placeholder">NO SIGNAL</span>
-            <video id="local-video" autoplay playsinline muted></video>
-        </div>
-        <div class="status-text">
-            <span class="status-dot"></span>Connected Viewers: <span id="viewer-count" style="margin-left:6px; font-weight:400; color:var(--text-main);">0</span>
-        </div>
-        
-        <div class="control-row">
-            <button id="btn-share" class="primary" onclick="startScreenShare()">Start Screen Share</button>
-            <button id="presenter-mute-all" class="mic-btn" onclick="toggleMuteAll()" title="Audience Muted (Locked)">
-                <!-- SVG Icon Injected via JS -->
-            </button>
-            <button id="presenter-mic" class="mic-btn" onclick="toggleMic(false)" title="Toggle Microphone">
-                <!-- SVG Icon Injected via JS -->
-            </button>
-        </div>
-        
-        <div id="qrcode" title="Click to Enlarge"></div>
-    </div>
+        <div id="statusMessage" class="status-message"></div>
 
-    <div id="view-viewer" class="container hidden">
-        <h1>Join</h1>
-        <p class="subtitle" id="viewer-subtitle">Enter Access Code</p>
-        <input type="text" id="join-id" placeholder="8A9X" autocomplete="off" maxlength="4">
-        <button class="primary" onclick="joinSession()">Connect</button>
-        <button onclick="window.location.href='https://kenchan20141.github.io/project/'">Back</button>
-    </div>
+        <form onsubmit="handleAddItem(event)">
+            <div class="form-group">
+                <label for="itemName" id="labelName">Name / Title</label>
+                <input type="text" id="itemName" placeholder="Enter name..." required>
+            </div>
 
-    <div id="viewer-player" class="hidden">
-        <button id="btn-exit" onclick="confirmExit()">⍈ Exit / 退出</button>
-        <button id="btn-fullscreen" onclick="toggleFullScreen()">⛶ Fullscreen</button>
-        
-        <div id="player-loading" class="loading-box">
-            <div class="loading-text" id="loading-msg">Connecting to Studio...</div>
-        </div>
-        <video id="remote-video" autoplay playsinline preload="auto"></video>
-        <button id="manual-play-btn" onclick="forcePlay()">Tap to Play Stream & Audio</button>
-        
-        <div id="viewer-controls" class="hidden">
-            <button id="viewer-mic" class="mic-btn" onclick="toggleMic(true)" title="Toggle Microphone">
-                <!-- SVG Icon Injected via JS -->
-            </button>
-        </div>
-    </div>
+            <div class="form-group">
+                <label for="itemEmail" id="labelEmail">Email / Contact</label>
+                <input type="email" id="itemEmail" placeholder="Enter email...">
+            </div>
 
-    <div id="debug-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
-            <span style="font-weight:400; color:var(--text-main); letter-spacing: 2px;">DIAGNOSTICS & NETWORK LOGS</span>
-            <button onclick="toggleDebug()" style="padding: 6px 16px; font-size: 10px; width: auto; margin: 0; border: 1px solid var(--border); background: #121213; color: var(--text-main);">CLOSE</button>
-        </div>
-        <div id="debug-content"></div>
-    </div>
-    <button id="btn-debug" onclick="toggleDebug()">LOG</button>
+            <div class="form-group">
+                <label for="itemContent" id="labelContent">Content / Notes</label>
+                <textarea id="itemContent" placeholder="Enter your content here..."></textarea>
+            </div>
 
-    <div id="qr-overlay" class="hidden" onclick="closeFullscreenQR()">
-        <div id="qr-overlay-content"></div>
-        <div class="qr-close-text">Tap anywhere to close</div>
+            <div class="button-group">
+                <button type="submit" class="btn-primary" id="btnAdd">Add Item</button>
+                <button type="button" class="btn-secondary" onclick="clearForm()" id="btnClear">Clear Form</button>
+            </div>
+        </form>
+
+        <div class="export-import">
+            <button class="btn-secondary" onclick="exportData()" id="btnExport">Export Data</button>
+            <button class="btn-secondary" onclick="triggerImport()" id="btnImport">Import Data</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+
+        <div class="data-list">
+            <h2 id="listTitle">Saved Items</h2>
+            <div id="itemsList"></div>
+        </div>
     </div>
 
     <script>
-        const ID_PREFIX = "sync-cast-room-"; 
-
-        let peerConfig = { 
-            debug: 2, 
-            config: { 
-                iceServers: [],
-                iceCandidatePoolSize: 10
+        // Language configuration
+        const translations = {
+            en: {
+                title: 'Local Data Platform',
+                labelName: 'Name / Title',
+                labelEmail: 'Email / Contact',
+                labelContent: 'Content / Notes',
+                btnAdd: 'Add Item',
+                btnClear: 'Clear Form',
+                btnExport: 'Export Data',
+                btnImport: 'Import Data',
+                listTitle: 'Saved Items',
+                addSuccess: 'Item added successfully!',
+                deleteSuccess: 'Item deleted successfully!',
+                updateSuccess: 'Item updated successfully!',
+                noItems: 'No items saved yet. Add one to get started!',
+                confirmDelete: 'Are you sure you want to delete this item?',
+                exportSuccess: 'Data exported successfully!',
+                importSuccess: 'Data imported successfully!',
+                importError: 'Error importing data. Make sure the file is valid.',
+                edit: 'Edit',
+                delete: 'Delete'
+            },
+            zh: {
+                title: '本地數據平台',
+                labelName: '名稱 / 標題',
+                labelEmail: '郵箱 / 聯繫方式',
+                labelContent: '內容 / 備註',
+                btnAdd: '添加項目',
+                btnClear: '清除表單',
+                btnExport: '匯出數據',
+                btnImport: '導入數據',
+                listTitle: '已保存的項目',
+                addSuccess: '項目添加成功！',
+                deleteSuccess: '項目刪除成功！',
+                updateSuccess: '項目更新成功！',
+                noItems: '還沒有保存任何項目。添加一個開始吧！',
+                confirmDelete: '確定要刪除此項目嗎？',
+                exportSuccess: '數據匯出成功！',
+                importSuccess: '數據導入成功！',
+                importError: '導入數據出錯。請確保文件有效。',
+                edit: '編輯',
+                delete: '刪除'
             }
         };
-        
-        let peer = null;
-        let localStream = null; 
-        let connectedViewers = new Map(); 
-        let activeCalls = new Map();      
-        let reconnectTimers = new Map();  
-        let heartbeatTimer = null;
 
+        let currentLanguage = 'en';
+        let editingId = null;
 
-// --- 新增：觀眾端控制列自動隱藏變數 ---
-let controlsTimeout = null;
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadItems();
+        });
 
-// --- 新增：重置閒置計時器的函數 ---
-function resetControlsTimeout() {
-    const controls = document.getElementById('viewer-controls');
-    // 如果控制列還沒連線顯示（包含 hidden），就不執行
-    if (controls.classList.contains('hidden')) return;
+        // Toggle language
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'en' ? 'zh' : 'en';
+            updateUILanguage();
+            localStorage.setItem('language', currentLanguage);
+        }
 
-    // 顯示控制列
-    controls.classList.remove('idle-hide');
+        // Update UI language
+        function updateUILanguage() {
+            const t = translations[currentLanguage];
+            document.getElementById('title').textContent = t.title;
+            document.getElementById('labelName').textContent = t.labelName;
+            document.getElementById('labelEmail').textContent = t.labelEmail;
+            document.getElementById('labelContent').textContent = t.labelContent;
+            document.getElementById('btnAdd').textContent = t.btnAdd;
+            document.getElementById('btnClear').textContent = t.btnClear;
+            document.getElementById('btnExport').textContent = t.btnExport;
+            document.getElementById('btnImport').textContent = t.btnImport;
+            document.getElementById('listTitle').textContent = t.listTitle;
+            document.querySelector('.lang-switch').textContent = currentLanguage === 'en' ? '中文' : 'English';
+            renderItems();
+        }
 
-    // 清除舊的計時器
-    clearTimeout(controlsTimeout);
-
-    // 設定 5 秒 (5000 毫秒) 後自動隱藏
-    controlsTimeout = setTimeout(() => {
-        controls.classList.add('idle-hide');
-    }, 5000);
-}
-
-// --- 新增：監聽使用者的各種動作來喚醒 UI ---
-['mousemove', 'mousedown', 'touchstart', 'touchmove', 'scroll', 'keydown'].forEach(evt => {
-    window.addEventListener(evt, resetControlsTimeout);
-});
-
-        
-
-        // 音訊雙向溝通變數
-        let localMicStream = null;
-        let localMicTrack = null;
-        let isMuted = true; 
-        
-        // 全場靜音管控變數 (預設開啟)
-        let isAllMuted = true;       // 主持人端狀態
-        let isHostMutingAll = true;  // 觀眾端狀態
-
-        const SVG_MIC_ON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
-        const SVG_MIC_OFF = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>`;
-        
-        // 人員與鎖頭 SVG (全場靜音管控)
-        const SVG_AUDIENCE_LOCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><rect x="15" y="14" width="7" height="5" rx="1"></rect><path d="M16.5 14v-2a2 2 0 1 1 4 0v2"></path></svg>`;
-        const SVG_AUDIENCE_UNLOCK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><rect x="15" y="14" width="7" height="5" rx="1"></rect><path d="M16.5 14v-1.5a2 2 0 0 1 3.5-.5"></path></svg>`;
-
-        function logDebug(msg, isError = false, isWarning = false) {
-            const panel = document.getElementById('debug-panel');
-            const content = document.getElementById('debug-content');
-            
-            if ((isError || isWarning) && (panel.style.display === 'none' || panel.style.display === '')) {
-                panel.style.display = 'flex';
+        // Load saved language preference
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('language');
+            if (saved) {
+                currentLanguage = saved;
+                updateUILanguage();
             }
+        });
 
-            const line = document.createElement('div');
-            if (isError) line.style.color = 'var(--accent-red)';
-            else if (isWarning) line.style.color = 'var(--primary)';
-            else line.style.color = 'var(--text-muted)';
+        // Add item
+        function handleAddItem(event) {
+            event.preventDefault();
+            const t = translations[currentLanguage];
             
-            line.style.marginBottom = '8px';
-            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
-            line.innerText = `[${time}] ${msg}`;
-            
-            content.appendChild(line);
-            content.scrollTop = content.scrollHeight;
-            
-            if (isError) console.error(msg); 
-            else if (isWarning) console.warn(msg);
-            else console.log(msg);
-        }
+            const name = document.getElementById('itemName').value.trim();
+            const email = document.getElementById('itemEmail').value.trim();
+            const content = document.getElementById('itemContent').value.trim();
 
-        function toggleDebug() {
-            const panel = document.getElementById('debug-panel');
-            panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
-        }
-
-        function switchView(viewId) {
-            document.querySelectorAll('.container, #viewer-player').forEach(el => el.classList.add('hidden'));
-            document.getElementById(viewId).classList.remove('hidden');
-        }
-
-        async function fetchIceServers() {
-            logDebug("Loading ExpressTURN servers...");
-            const iceServers = [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                {
-                    urls: [
-                        "turn:free.expressturn.com:3478",
-                        "turn:free.expressturn.com:3478?transport=udp",
-                        "turn:free.expressturn.com:3478?transport=tcp"
-                    ],
-                    username: "000000002095629902",
-                    credential: "G/cOmHLAPAAts04J1oj3AdBl6nE="
-                }
-            ];
-            logDebug("Successfully loaded ExpressTURN credentials.");
-            return iceServers;
-        }
-
-        // 初始化麥克風權限與設定
-        async function initAudioContext() {
-            try {
-                localMicStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: { echoCancellation: true, noiseSuppression: true }, 
-                    video: false 
-                });
-                localMicTrack = localMicStream.getAudioTracks()[0];
-                localMicTrack.enabled = false; // 預設強制靜音
-                isMuted = true;
-                logDebug("Microphone initialized and muted.");
-                renderMicIcon();
-                renderMuteAllIcon();
-           } catch(err) {
-            // 移除 true 參數，讓它變成一般訊息，就不會觸發 LOG 面板彈出了
-            logDebug(`Microphone access denied: ${err.message}`);
-            renderMicIcon(); 
-            renderMuteAllIcon();
-        }
-        }
-
-        // 麥克風開關 (支援檢查全場靜音狀態)
-        function toggleMic(isViewer = false) {
-            if (isViewer && isHostMutingAll) {
-                alert("主持人已開啟全場靜音，暫時無法使用麥克風\nThe host has muted everyone.");
+            if (!name) {
+                showStatus(t.labelName + ' is required', 'error');
                 return;
             }
-            if (!localMicTrack) {
-                alert("未偵測到麥克風或權限被拒絕\nMicrophone not found or permission denied.");
+
+            const items = getItems();
+            const item = {
+                id: editingId || Date.now(),
+                name,
+                email,
+                content,
+                timestamp: new Date().toLocaleString(currentLanguage === 'en' ? 'en-US' : 'zh-TW')
+            };
+
+            if (editingId) {
+                const index = items.findIndex(i => i.id === editingId);
+                if (index !== -1) {
+                    items[index] = item;
+                    showStatus(t.updateSuccess, 'success');
+                }
+                editingId = null;
+                document.getElementById('btnAdd').textContent = t.btnAdd;
+            } else {
+                items.push(item);
+                showStatus(t.addSuccess, 'success');
+            }
+
+            saveItems(items);
+            clearForm();
+        }
+
+        // Clear form
+        function clearForm() {
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemEmail').value = '';
+            document.getElementById('itemContent').value = '';
+            editingId = null;
+            const t = translations[currentLanguage];
+            document.getElementById('btnAdd').textContent = t.btnAdd;
+        }
+
+        // Edit item
+        function editItem(id) {
+            const items = getItems();
+            const item = items.find(i => i.id === id);
+            
+            if (item) {
+                document.getElementById('itemName').value = item.name;
+                document.getElementById('itemEmail').value = item.email;
+                document.getElementById('itemContent').value = item.content;
+                editingId = id;
+                const t = translations[currentLanguage];
+                document.getElementById('btnAdd').textContent = 'Update Item';
+                document.getElementById('itemName').focus();
+            }
+        }
+
+        // Delete item
+        function deleteItem(id) {
+            const t = translations[currentLanguage];
+            if (confirm(t.confirmDelete)) {
+                const items = getItems();
+                const filtered = items.filter(i => i.id !== id);
+                saveItems(filtered);
+                showStatus(t.deleteSuccess, 'success');
+            }
+        }
+
+        // Get items from storage
+        function getItems() {
+            const data = localStorage.getItem('appItems');
+            return data ? JSON.parse(data) : [];
+        }
+
+        // Save items to storage
+        function saveItems(items) {
+            localStorage.setItem('appItems', JSON.stringify(items));
+            renderItems();
+        }
+
+        // Render items
+        function renderItems() {
+            const items = getItems();
+            const container = document.getElementById('itemsList');
+            const t = translations[currentLanguage];
+
+            if (items.length === 0) {
+                container.innerHTML = `<div class="empty-state"><p>${t.noItems}</p></div>`;
                 return;
             }
-            isMuted = !isMuted;
-            localMicTrack.enabled = !isMuted;
-            renderMicIcon();
-            logDebug(`Microphone is now ${isMuted ? 'MUTED' : 'UNMUTED'}.`);
+
+            container.innerHTML = items.map(item => `
+                <div class="list-item">
+                    <div class="item-content">
+                        <div class="item-title">${escapeHtml(item.name)}</div>
+                        ${item.email ? `<div class="item-text"><strong>Email:</strong> ${escapeHtml(item.email)}</div>` : ''}
+                        ${item.content ? `<div class="item-text">${escapeHtml(item.content).replace(/\n/g, '<br>')}</div>` : ''}
+                        <div class="item-time">${item.timestamp}</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="btn-small btn-edit" onclick="editItem(${item.id})">${t.edit}</button>
+                        <button class="btn-small btn-delete" onclick="deleteItem(${item.id})">${t.delete}</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // 全場靜音管控開關 (僅限主持人)
-        function toggleMuteAll() {
-            isAllMuted = !isAllMuted;
-            renderMuteAllIcon();
-            logDebug(`Audience Mute Lock is now ${isAllMuted ? 'ON (LOCKED)' : 'OFF (UNLOCKED)'}.`);
-            
-            // 廣播給所有在線觀眾
-            connectedViewers.forEach((viewer, peerId) => {
-                try { viewer.data.send({ type: 'MUTE_ALL_STATE', state: isAllMuted }); } catch(e){}
-            });
+        // Load items on startup
+        function loadItems() {
+            renderItems();
         }
 
-        // 渲染麥克風按鈕外觀 (SVG)
-        function renderMicIcon() {
-            const pBtn = document.getElementById('presenter-mic');
-            const vBtn = document.getElementById('viewer-mic');
-            
-            [pBtn, vBtn].forEach(btn => {
-                if(btn) {
-                    btn.innerHTML = isMuted ? SVG_MIC_OFF : SVG_MIC_ON;
-                    if(isMuted) {
-                        btn.classList.remove('active');
+        // Export data
+        function exportData() {
+            const t = translations[currentLanguage];
+            const items = getItems();
+            const dataStr = JSON.stringify(items, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `data-export-${new Date().getTime()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            showStatus(t.exportSuccess, 'success');
+        }
+
+        // Trigger import
+        function triggerImport() {
+            document.getElementById('importFile').click();
+        }
+
+        // Import data
+        function importData(event) {
+            const t = translations[currentLanguage];
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        saveItems(imported);
+                        showStatus(t.importSuccess, 'success');
                     } else {
-                        btn.classList.add('active');
+                        showStatus(t.importError, 'error');
                     }
+                } catch (error) {
+                    showStatus(t.importError, 'error');
                 }
-            });
+                event.target.value = '';
+            };
+            reader.readAsText(file);
         }
 
-        // 渲染全場靜音按鈕外觀 (SVG)
-        function renderMuteAllIcon() {
-            const btn = document.getElementById('presenter-mute-all');
-            if (!btn) return;
-            btn.innerHTML = isAllMuted ? SVG_AUDIENCE_LOCK : SVG_AUDIENCE_UNLOCK;
-            if (isAllMuted) {
-                btn.classList.remove('active'); // 鎖定狀態(紅)
-                btn.title = "Audience Locked (Click to Unlock)";
-            } else {
-                btn.classList.add('active'); // 解鎖狀態(黃銅金)
-                btn.title = "Audience Unlocked (Click to Lock)";
-            }
+        // Show status message
+        function showStatus(message, type) {
+            const el = document.getElementById('statusMessage');
+            el.textContent = message;
+            el.className = 'status-message status-' + type;
+            setTimeout(() => {
+                el.className = 'status-message';
+            }, 3000);
         }
 
-        // 更新觀眾端麥克風被鎖定時的視覺反饋
-        function updateViewerMicLock() {
-            const vBtn = document.getElementById('viewer-mic');
-            if(!vBtn) return;
-            if (isHostMutingAll) {
-                vBtn.classList.add('locked');
-            } else {
-                vBtn.classList.remove('locked');
-            }
-        }
-
-        window.onload = async () => {
-            renderMicIcon(); 
-            renderMuteAllIcon();
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomFromUrl = urlParams.get('room');
-            if (roomFromUrl) {
-                document.getElementById('join-id').value = roomFromUrl;
-                await initRole('viewer', true); 
-            }
-        }
-
-        async function initRole(role, autoJoin = false) {
-            const btnPresent = document.getElementById('btn-start-presenter');
-            const btnView = document.getElementById('btn-start-viewer');
-            if(btnPresent) btnPresent.disabled = true;
-            if(btnView) btnView.disabled = true;
-
-            peerConfig.config.iceServers = await fetchIceServers();
-
-            if (role === 'presenter') {
-                logDebug("Booting Studio Mode...");
-                await initAudioContext(); 
-                switchView('view-presenter');
-                setupPresenter();
-            } else {
-                logDebug("Booting Viewer Mode...");
-                switchView('view-viewer');
-                if(btnPresent) btnPresent.disabled = false;
-                if(btnView) btnView.disabled = false;
-                if(autoJoin) joinSession();
-            }
-        }
-
-        /* ================= 講者端邏輯 ================= */
-        function setupPresenter() {
-            const displayId = generateShortID();
-            const actualPeerId = ID_PREFIX + displayId; 
-            
-            if (peer) { try { peer.destroy(); } catch(e){} }
-            peer = new Peer(actualPeerId, peerConfig); 
-            
-            peer.on('open', (id) => {
-                logDebug(`Studio Created. Underlying ID: ${id}`);
-                document.getElementById('room-id').innerText = displayId;
-                
-                const joinUrl = `${window.location.origin}${window.location.pathname}?room=${displayId}`;
-                document.getElementById("qrcode").innerHTML = ""; 
-                new QRCode(document.getElementById("qrcode"), { text: joinUrl, width: 128, height: 128, colorDark: "#18191B", colorLight: "#E6E2D6" });
-                
-                document.getElementById("qrcode").onclick = () => openFullscreenQR(joinUrl);
-                
-                startHeartbeat();
-            });
-
-            peer.on('connection', (conn) => {
-                logDebug(`Viewer connection initiated: ${conn.peer}`);
-                cleanupViewer(conn.peer);
-
-                const handleConnectionOpen = () => {
-                    logDebug(`Viewer ${conn.peer} data channel OPEN.`);
-                    connectedViewers.set(conn.peer, { data: conn, lastPing: Date.now() });
-                    updateViewerCount();
-                };
-
-                if (conn.open) handleConnectionOpen(); else conn.on('open', handleConnectionOpen);
-
-                conn.on('data', (data) => {
-                    if (data.type === 'PONG') {
-                        if (connectedViewers.has(conn.peer)) {
-                            connectedViewers.get(conn.peer).lastPing = Date.now();
-                        }
-                    } else if (data.type === 'VIEWER_READY') {
-                        logDebug(`Viewer ${conn.peer} is ready for stream.`);
-                        
-                        // 當新觀眾準備好時，立即同步當前的全場管控狀態給他
-                        try { conn.send({ type: 'MUTE_ALL_STATE', state: isAllMuted }); } catch(e){}
-                        
-                        if (localStream) callViewer(conn.peer);
-                    }
-                });
-
-                conn.on('close', () => { logDebug(`Viewer closed connection.`); cleanupViewer(conn.peer); });
-                conn.on('error', (err) => { logDebug(`Data Channel Error: ${err.message}`, true); cleanupViewer(conn.peer); });
-            });
-
-            // 接收來自觀眾的呼叫 (語音)
-            peer.on('call', (call) => {
-                if (call.metadata && call.metadata.type === 'voice') {
-                    logDebug(`Incoming voice stream from viewer ${call.peer}.`);
-                    call.answer(localMicStream); 
-                    
-                    call.on('stream', remoteStream => {
-                        let audioEl = document.createElement('audio');
-                        audioEl.autoplay = true;
-                        audioEl.srcObject = remoteStream;
-                        audioEl.id = 'voice-' + call.peer;
-                        document.body.appendChild(audioEl);
-                    });
-                    
-                    call.on('close', () => {
-                        let el = document.getElementById('voice-' + call.peer);
-                        if (el) el.remove();
-                    });
-                }
-            });
-
-            peer.on('error', (err) => {
-                if (err.type === 'peer-unavailable') {
-                    logDebug(`Note: A peer disconnected abruptly.`, false, true);
-                } else if (err.type === 'unavailable-id') {
-                    logDebug(`ID collision! Regenerating...`, true);
-                    setupPresenter();
-                } else {
-                    logDebug(`PeerJS Error [${err.type}]: ${err.message}`, true);
-                }
-            });
-        }
-
-        function openFullscreenQR(url) {
-            const overlay = document.getElementById('qr-overlay');
-            const content = document.getElementById('qr-overlay-content');
-            content.innerHTML = "";
-            new QRCode(content, { text: url, width: 512, height: 512, colorDark: "#18191B", colorLight: "#E6E2D6" });
-            overlay.classList.remove('hidden');
-        }
-
-        function closeFullscreenQR() {
-            document.getElementById('qr-overlay').classList.add('hidden');
-        }
-
-        function startHeartbeat() {
-            if (heartbeatTimer) clearInterval(heartbeatTimer);
-            heartbeatTimer = setInterval(() => {
-                const now = Date.now();
-                connectedViewers.forEach((viewer, peerId) => {
-                    if (now - viewer.lastPing > 15000) {
-                        logDebug(`Viewer timed out (No Heartbeat). Removing.`);
-                        cleanupViewer(peerId);
-                    } else {
-                        try { viewer.data.send({ type: 'PING' }); } catch(e){}
-                    }
-                });
-            }, 4000);
-        }
-
-        function cleanupViewer(peerId) {
-            clearTimeout(reconnectTimers.get(peerId));
-            if (connectedViewers.has(peerId)) {
-                try { connectedViewers.get(peerId).data.close(); } catch(e){}
-                connectedViewers.delete(peerId);
-            }
-            if (activeCalls.has(peerId)) {
-                try { activeCalls.get(peerId).close(); } catch(e){}
-                activeCalls.delete(peerId);
-            }
-            let voiceEl = document.getElementById('voice-' + peerId);
-            if(voiceEl) voiceEl.remove();
-
-            updateViewerCount();
-        }
-
-        function updateViewerCount() { document.getElementById('viewer-count').innerText = connectedViewers.size; }
-
-        function callViewer(peerId) {
-            if (!localStream || !peer) return;
-            if (activeCalls.has(peerId)) return;
-
-            try {
-                logDebug(`Dialing viewer for screen share...`);
-                const call = peer.call(peerId, localStream, { metadata: { type: 'screen' } });
-                
-                if (call) {
-                    activeCalls.set(peerId, call);
-                    
-                    if (call.peerConnection) {
-                        call.peerConnection.addEventListener('connectionstatechange', () => {
-                            const state = call.peerConnection.connectionState;
-                            logDebug(`WebRTC Media State -> ${state.toUpperCase()}`);
-                            
-                            if (state === 'disconnected' || state === 'failed') {
-                                logDebug(`Media dropped! Checking reconnect...`, false, true);
-                                activeCalls.delete(peerId);
-                                try { call.close(); } catch(e){}
-                                
-                                clearTimeout(reconnectTimers.get(peerId));
-                                reconnectTimers.set(peerId, setTimeout(() => {
-                                    if (connectedViewers.has(peerId) && localStream) {
-                                        logDebug(`Executing auto-reconnect.`);
-                                        callViewer(peerId);
-                                    }
-                                }, 3000));
-                            }
-                        });
-                    }
-                    
-                    call.on('close', () => { activeCalls.delete(peerId); });
-                    call.on('error', (err) => { logDebug(`Media Error: ${err.message}`, true); activeCalls.delete(peerId); });
-                }
-            } catch (err) {
-                logDebug(`Failed to construct call: ${err.message}`, true);
-            }
-        }
-
-        async function startScreenShare() {
-            try {
-                const newStream = await navigator.mediaDevices.getDisplayMedia({ 
-                    video: { width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } }, 
-                    audio: true 
-                });
-                
-                logDebug("Display Media Acquired (Audio enabled)!");
-                document.getElementById('local-video').srcObject = newStream;
-                document.querySelector('.preview-wrapper').classList.add('active');
-
-                const btnShare = document.getElementById('btn-share');
-                btnShare.innerText = "Sharing... Click to Change";
-                btnShare.style.background = "var(--surface-light)";
-                btnShare.style.color = "var(--text-main)";
-                btnShare.style.border = "1px solid var(--border)";
-
-                if (localStream) {
-                    const oldHasAudio = localStream.getAudioTracks().length > 0;
-                    const newHasAudio = newStream.getAudioTracks().length > 0;
-
-                    if (oldHasAudio === newHasAudio) {
-                        logDebug("Replacing existing tracks for seamless transition...");
-                        const newVideoTrack = newStream.getVideoTracks()[0];
-                        const newAudioTrack = newStream.getAudioTracks()[0];
-                        
-                        activeCalls.forEach((call, peerId) => {
-                            if (call.peerConnection) {
-                                const senders = call.peerConnection.getSenders();
-                                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-                                const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
-
-                                if (videoSender && newVideoTrack) {
-                                    videoSender.replaceTrack(newVideoTrack).catch(e => logDebug(`Video replace failed: ${e.message}`, true));
-                                }
-                                if (audioSender && newAudioTrack) {
-                                    audioSender.replaceTrack(newAudioTrack).catch(e => logDebug(`Audio replace failed: ${e.message}`, true));
-                                }
-                            }
-                        });
-                        localStream.getTracks().forEach(track => track.stop());
-                        localStream = newStream;
-                    } else {
-                        logDebug("Audio track changed. Re-establishing calls to viewers...");
-                        localStream.getTracks().forEach(track => track.stop());
-                        activeCalls.forEach(c => { try { c.close(); } catch(e){} });
-                        activeCalls.clear();
-                        
-                        localStream = newStream; 
-                        connectedViewers.forEach((viewer, peerId) => {
-                            callViewer(peerId);
-                        });
-                    }
-                } else {
-                    localStream = newStream; 
-                    connectedViewers.forEach((viewer, peerId) => {
-                        try { viewer.data.send({ type: 'START_SHARE' }); } catch(e){}
-                        callViewer(peerId);
-                    });
-                }
-                
-                localStream.getVideoTracks()[0].onended = () => {
-                    logDebug("Screen sharing stopped by user.");
-                    btnShare.innerText = "Start Screen Share";
-                    btnShare.style.background = "var(--primary)";
-                    btnShare.style.color = "#121212";
-                    btnShare.style.border = "1px solid transparent";
-                    document.getElementById('local-video').srcObject = null;
-                    document.querySelector('.preview-wrapper').classList.remove('active');
-                    
-                    connectedViewers.forEach(v => { try { v.data.send({ type: 'STOP_SHARE' }); } catch(e){} });
-                    activeCalls.forEach(c => { try { c.close(); } catch(e){} });
-                    activeCalls.clear();
-                    localStream = null;
-                };
-
-            } catch (err) {
-                logDebug(`Screen Share Error: ${err.message}`, true);
-            }
-        }
-
-        function generateShortID() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-            let id = ''; for (let i = 0; i < 4; i++) id += chars.charAt(Math.floor(Math.random() * chars.length));
-            return id;
-        }
-
-        /* ================= 觀眾端邏輯 ================= */
-        async function joinSession() {
-            const inputId = document.getElementById('join-id').value.trim().toUpperCase();
-            if (!inputId) return;
-            
-            const hostId = ID_PREFIX + inputId; 
-
-            // 在此處請求觀眾麥克風權限 (使用者主動點擊)
-            await initAudioContext();
-            updateViewerMicLock(); // 初始化按鈕外觀
-
-            logDebug(`Connecting to Host: ${inputId}`);
-            switchView('viewer-player');
-            const loadingMsg = document.getElementById('loading-msg');
-            loadingMsg.innerText = "INITIALIZING NETWORK...";
-            
-            document.getElementById('btn-exit').style.display = 'block';
-
-            if (peer) { try { peer.destroy(); } catch(e){} }
-            peer = new Peer(undefined, peerConfig);
-
-            peer.on('call', (call) => {
-                if (call.metadata && call.metadata.type === 'screen') {
-                    logDebug(`Incoming screen stream. Answering...`);
-                    call.answer(); 
-                    
-                    call.on('stream', (remoteStream) => {
-                        logDebug("Screen Stream track received.");
-                        document.getElementById('player-loading').style.display = 'none';
-                        document.getElementById('btn-fullscreen').style.display = 'block'; 
-                        
-                        const videoEl = document.getElementById('remote-video');
-                        if (videoEl.srcObject !== remoteStream) {
-                            videoEl.srcObject = remoteStream;
-                        }
-                        
-                        let playAttempted = false;
-                        const attemptPlay = () => {
-                            playAttempted = true;
-                            videoEl.play().then(() => {
-                                logDebug("Autoplay succeeded!");
-                                document.getElementById('manual-play-btn').style.display = 'none';
-                            }).catch(e => {
-                                logDebug(`Browser Blocked Autoplay. Require tap.`, true);
-                                document.getElementById('manual-play-btn').style.display = 'block';
-                            });
-                        };
-
-                        videoEl.onloadedmetadata = attemptPlay;
-                        setTimeout(() => { if (!playAttempted) attemptPlay(); }, 1500);
-                        setTimeout(() => {
-                            if (videoEl.paused) {
-                                document.getElementById('manual-play-btn').style.display = 'block';
-                            }
-                        }, 3000);
-                    });
-
-                    call.on('error', (err) => { logDebug(`Media Error: ${err.message}`, true); });
-                } else {
-                    call.answer();
-                }
-            });
-
-            peer.on('open', (viewerId) => {
-                logDebug(`Viewer initialized.`);
-                loadingMsg.innerText = `CONTACTING STUDIO...`;
-                
-                const conn = peer.connect(hostId, { reliable: true });
-                
-                const handleConnOpen = () => {
-                    logDebug("Data Channel connected.");
-                    loadingMsg.innerText = "CONNECTED / WAITING FOR HOST STREAM...";
-                    conn.send({ type: 'VIEWER_READY' });
-
-                    // 資料通道建立後，主動播打語音電話給主持人
-                    if (localMicStream) {
-                        logDebug("Initiating voice channel to host...");
-                        const voiceCall = peer.call(hostId, localMicStream, { metadata: { type: 'voice' } });
-                        
-                        voiceCall.on('stream', remoteStream => {
-                            logDebug("Host voice stream received.");
-                            let audioEl = document.getElementById('host-voice');
-                            if (!audioEl) {
-                                audioEl = document.createElement('audio');
-                                audioEl.id = 'host-voice';
-                                audioEl.autoplay = true;
-                                document.body.appendChild(audioEl);
-                            }
-                            audioEl.srcObject = remoteStream;
-                            
-                            document.getElementById('viewer-controls').classList.remove('hidden');
-                            resetControlsTimeout(); // 啟動閒置自動隱藏計時器
-                        });
-                        voiceCall.on('error', (err) => logDebug(`Voice call error: ${err.message}`, true));
-                    }
-                };
-
-                if (conn.open) handleConnOpen(); else conn.on('open', handleConnOpen);
-
-                conn.on('data', (data) => {
-                    if (data.type === 'PING') {
-                        conn.send({ type: 'PONG' });
-                    }
-                    else if (data.type === 'MUTE_ALL_STATE') {
-                        isHostMutingAll = data.state;
-                        if (isHostMutingAll) {
-                            // 主持人鎖定全場，強制關閉麥克風
-                            isMuted = true;
-                            if (localMicTrack) localMicTrack.enabled = false;
-                            renderMicIcon();
-                            logDebug("Host locked all microphones.");
-                        } else {
-                            logDebug("Host unlocked microphones.");
-                        }
-                        // 更新按鈕鎖定樣式
-                        updateViewerMicLock();
-                    }
-                    else if (data.type === 'START_SHARE') {
-                        loadingMsg.innerText = "LOADING STREAM...";
-                    }
-                    else if (data.type === 'STOP_SHARE') { 
-                        logDebug('Host paused screen share.', false, true); 
-                        document.getElementById('player-loading').style.display = 'block';
-                        loadingMsg.innerText = "主持人已停止分享 / HOST STOPPED SHARING";
-                        document.getElementById('remote-video').srcObject = null;
-                        document.getElementById('manual-play-btn').style.display = 'none';
-                        document.getElementById('btn-fullscreen').style.display = 'none';
-                        
-                        if (document.fullscreenElement) document.exitFullscreen();
-                        alert("主持人已停止分享螢幕\nHost has stopped screen sharing.");
-                    }
-                });
-
-                conn.on('close', () => { 
-                    alert('Session closed by Host.'); 
-                    window.location.href = 'https://kenchan20141.github.io/project/'; 
-                });
-            });
-
-            peer.on('error', (err) => { 
-                logDebug(`PeerJS Error [${err.type}]: ${err.message}`, true); 
-                if (err.type === 'peer-unavailable') {
-                    loadingMsg.innerText = "HOST NOT FOUND. CHECK ACCESS CODE.";
-                    setTimeout(() => {
-                        window.location.href = 'https://kenchan20141.github.io/project/';
-                    }, 3000);
-                }
-            });
-        }
-
-        function forcePlay() {
-            logDebug("Manual play pressed.");
-            const videoEl = document.getElementById('remote-video');
-            videoEl.play().then(() => {
-                document.getElementById('manual-play-btn').style.display = 'none';
-            }).catch(e => {
-                logDebug(`Manual play failed: ${e.message}`, true);
-                alert("Please ensure your browser allows video & audio playback.");
-            });
-            
-            const audioEl = document.getElementById('host-voice');
-            if(audioEl && audioEl.paused) {
-                audioEl.play().catch(e=>console.log("Audio play error", e));
-            }
-        }
-
-        function toggleFullScreen() {
-            const player = document.getElementById('viewer-player');
-            if (!document.fullscreenElement) {
-                if (player.requestFullscreen) { player.requestFullscreen(); }
-                else if (player.webkitRequestFullscreen) { player.webkitRequestFullscreen(); } 
-            } else {
-                if (document.exitFullscreen) { document.exitFullscreen(); }
-                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
-            }
-        }
-
-        document.addEventListener('fullscreenchange', updateFullscreenButton);
-        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
-
-        function updateFullscreenButton() {
-            const btn = document.getElementById('btn-fullscreen');
-            if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-                btn.innerText = "⛶ FULLSCREEN";
-            } else {
-                btn.innerText = "✖ EXIT FULLSCREEN";
-            }
-        }
-
-        function confirmExit() {
-            const isConfirmed = window.confirm("確定要退出觀看嗎？\nAre you sure you want to exit?");
-            if (isConfirmed) {
-                logDebug("User confirmed exit. Terminating session...");
-                
-                if (document.fullscreenElement || document.webkitFullscreenElement) {
-                    if (document.exitFullscreen) { document.exitFullscreen(); }
-                    else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
-                }
-                
-                if (peer) {
-                    try { peer.destroy(); } catch(e) { logDebug(`Peer destroy error: ${e.message}`, true); }
-                }
-                
-                if (localMicStream) {
-                    localMicStream.getTracks().forEach(track => track.stop());
-                }
-
-                window.location.href = 'https://kenchan20141.github.io/project/';
-            }
+        // Escape HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
         }
     </script>
 </body>

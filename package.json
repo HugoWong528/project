@@ -1,0 +1,19 @@
+{
+  "name": "local-data-platform",
+  "version": "1.0.0",
+  "description": "Local-only data storage platform - runs on USB, no external providers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "local",
+    "data",
+    "storage",
+    "usb",
+    "offline"
+  ],
+  "author": "",
+  "license": "MIT"
+}
